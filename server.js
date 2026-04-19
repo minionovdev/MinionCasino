@@ -7,147 +7,101 @@ app.use(cors());
 app.use(express.json());
 
 const users = {};
+const queue = {};
 const matches = {};
-const tx = {};
 
-// 👤 CREATE USER
+// 👤 init user + referral
 app.post("/user/init", (req, res) => {
-  const { id, username } = req.body;
+  const { id, username, ref } = req.body;
 
   if (!users[id]) {
     users[id] = {
       id,
       username,
       balance: 0,
-      wins: 0,
-      losses: 0,
-      rating: 1000
+      refBy: ref || null,
+      wins: 0
     };
+
+    if (ref && users[ref]) {
+      users[ref].balance += 1; // referral bonus (simple)
+    }
   }
 
   res.json(users[id]);
 });
 
-// 💰 DEPOSIT (Stars / TON later)
+// 💰 deposit (Stars placeholder)
 app.post("/user/deposit", (req, res) => {
-  const { userId, amount, type } = req.body;
+  const { userId, amount } = req.body;
 
   users[userId].balance += amount;
-
-  tx[uuid()] = {
-    userId,
-    amount,
-    type,
-    time: Date.now()
-  };
 
   res.json(users[userId]);
 });
 
-
-// ⚔️ CREATE MATCH (PvP stake)
-app.post("/match/create", (req, res) => {
+// ⚔️ PvP queue
+app.post("/pvp/join", (req, res) => {
   const { userId, stake } = req.body;
 
-  const id = uuid();
+  queue[userId] = { userId, stake };
 
-  matches[id] = {
-    id,
-    a: userId,
-    b: null,
-    stake,
-    status: "waiting"
-  };
+  const players = Object.values(queue);
 
-  res.json(matches[id]);
-});
+  if (players.length >= 2) {
+    const a = players[0];
+    const b = players[1];
 
-// ⚔️ JOIN MATCH
-app.post("/match/join", (req, res) => {
-  const { matchId, userId } = req.body;
+    Object.keys(queue).forEach(k => delete queue[k]);
 
-  const m = matches[matchId];
-  if (!m || m.b) return res.status(400).send("invalid");
+    const matchId = uuid();
 
-  m.b = userId;
-  m.status = "ready";
+    matches[matchId] = {
+      id: matchId,
+      a,
+      b,
+      stake,
+      status: "waiting"
+    };
 
-  res.json(m);
-});
+    setTimeout(() => resolve(matchId), 10000);
 
-
-// 🎲 PvP ENGINE (like rolls logic)
-app.post("/match/play", (req, res) => {
-  const m = matches[req.body.matchId];
-
-  const a = users[m.a];
-  const b = users[m.b];
-
-  // 🎯 weighted system (skill + balance + randomness)
-  const aPower = a.rating + a.balance * 0.1;
-  const bPower = b.rating + b.balance * 0.1;
-
-  const total = aPower + bPower;
-  const roll = Math.random() * total;
-
-  const winner = roll < aPower ? a : b;
-  const loser = winner === a ? b : a;
-
-  const winAmount = m.stake * 2;
-
-  winner.balance += winAmount;
-  winner.wins++;
-  loser.losses++;
-
-  // rating system (ELO-like)
-  winner.rating += 25;
-  loser.rating -= 15;
-
-  m.winner = winner.id;
-  m.status = "finished";
-
-  res.json({
-    winner: winner.username,
-    match: m
-  });
-});
-
-
-// 🎡 WHEEL (like rolls casino wheel)
-app.post("/wheel/spin", (req, res) => {
-  const { userId, bet } = req.body;
-
-  const u = users[userId];
-
-  if (u.balance < bet) return res.status(400).send("no balance");
-
-  u.balance -= bet;
-
-  // 🎯 probability scales with bet size (bigger bet = higher win chance but lower multiplier stability)
-  const chance = Math.min(0.25 + bet / 200, 0.85);
-
-  const win = Math.random() < chance;
-
-  let reward = 0;
-
-  if (win) {
-    reward = bet * (1 + Math.random() * 3.5); // 1x–4.5x
-    u.balance += reward;
+    return res.json({
+      status: "match_found",
+      matchId
+    });
   }
 
-  res.json({
-    win,
-    reward,
-    balance: u.balance
-  });
+  res.json({ status: "waiting" });
 });
 
+// 🎡 resolve match
+function resolve(matchId) {
+  const m = matches[matchId];
 
-// 📊 LEADERBOARD
-app.get("/leaderboard", (req, res) => {
-  res.json(
-    Object.values(users).sort((a, b) => b.rating - a.rating)
-  );
+  const aScore = Math.random() * m.a.stake + 50;
+  const bScore = Math.random() * m.b.stake + 50;
+
+  const total = aScore + bScore;
+  const roll = Math.random() * total;
+
+  const winner = roll < aScore ? m.a.userId : m.b.userId;
+
+  users[winner].balance += m.stake * 2;
+  users[winner].wins++;
+
+  m.winner = winner;
+  m.status = "finished";
+}
+
+// 📊 result
+app.get("/match/:id", (req, res) => {
+  res.json(matches[req.params.id] || {});
 });
 
-app.listen(3001, () => console.log("ROLLS engine running"));
+// 👤 user
+app.get("/user/:id", (req, res) => {
+  res.json(users[req.params.id] || {});
+});
+
+app.listen(3001, () => console.log("casino running"));
