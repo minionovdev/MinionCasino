@@ -3,34 +3,55 @@
 <head>
   <title>Minion Casino</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <style>
+    body {
+      background: #0f0f1a;
+      color: white;
+      text-align: center;
+      font-family: sans-serif;
+    }
+
+    #wheel {
+      font-size: 90px;
+      transition: transform 3s ease-out;
+    }
+
+    .card {
+      background: #1c1c2e;
+      margin: 10px;
+      padding: 20px;
+      border-radius: 15px;
+    }
+
+    button {
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      background: gold;
+      font-weight: bold;
+    }
+  </style>
 </head>
 
 <body>
-  <h1>🎰 Minion Casino</h1>
 
-  <button onclick="init()">Connect</button>
+<h1>🎰 Minion Casino</h1>
 
-  <h3>Balance: <span id="bal">0</span></h3>
-  <h3>Rating: <span id="rat">1000</span></h3>
+<div class="card">
+  Balance: <span id="bal">0</span>
+</div>
 
-  <hr/>
-
-  <h2>⚔️ PvP</h2>
+<div class="card">
   <input id="stake" placeholder="stake" />
-  <button onclick="createMatch()">Create</button>
+  <button onclick="join()">Join PvP</button>
+</div>
 
-  <input id="matchId" placeholder="match id" />
-  <button onclick="join()">Join</button>
-  <button onclick="play()">Play</button>
+<div class="card">
+  <div id="wheel">🎡</div>
+  <h3 id="status">Waiting...</h3>
+</div>
 
-  <hr/>
-
-  <h2>🎡 Wheel</h2>
-  <input id="bet" placeholder="bet" />
-  <button onclick="spin()">Spin</button>
-
-  <h3 id="out"></h3>
-
-  <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
