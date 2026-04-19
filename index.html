@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Minion Casino</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+
+<body>
+  <h1>🎰 Minion Casino</h1>
+
+  <button onclick="init()">Connect</button>
+
+  <h3>Balance: <span id="bal">0</span></h3>
+  <h3>Rating: <span id="rat">1000</span></h3>
+
+  <hr/>
+
+  <h2>⚔️ PvP</h2>
+  <input id="stake" placeholder="stake" />
+  <button onclick="createMatch()">Create</button>
+
+  <input id="matchId" placeholder="match id" />
+  <button onclick="join()">Join</button>
+  <button onclick="play()">Play</button>
+
+  <hr/>
+
+  <h2>🎡 Wheel</h2>
+  <input id="bet" placeholder="bet" />
+  <button onclick="spin()">Spin</button>
+
+  <h3 id="out"></h3>
+
+  <script src="app.js"></script>
+</body>
+</html>
